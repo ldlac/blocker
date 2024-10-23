@@ -1,0 +1,10 @@
+.:5353 {
+  metadata
+  
+	log . "{common} {/blocker/request-blocked}"
+  
+  # blocker abp 1h abp empty
+	blocker https://raw.githubusercontent.com/ldlac/hostsfile/refs/heads/main/out/abp 1h abp empty
+
+	forward . 8.8.8.8 9.9.9.9
+}

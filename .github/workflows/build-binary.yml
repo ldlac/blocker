@@ -12,22 +12,22 @@ jobs:
       contents: write
     strategy:
       matrix:
-        go-version: [ '1.22.5' ]
-        os-flavor: [ 'linux' ]
-        architecture: [ 'amd64', 'arm', 'arm64' ]
+        go-version: ["1.22.5"]
+        os-flavor: ["linux"]
+        architecture: ["amd64", "arm", "arm64"]
 
     steps:
       # Fetch the coredns repository first. This is expanded at ./
       - name: Fetch the coredns repository at a tag
         uses: actions/checkout@v4
         with:
-          repository: 'coredns/coredns'
-          ref: 'v1.11.1'
+          repository: "coredns/coredns"
+          ref: "v1.11.1"
       # Fetch this repository next. It is put inside ./plugin/blocker/
       - name: Fetch the present repository
         uses: actions/checkout@v4
         with:
-          path: './plugin/blocker'
+          path: "./plugin/blocker"
       - name: Move plugin.cfg from blocker plugin to the top level (coredns level)
         run: |
           mv ./plugin/blocker/plugin.cfg ./plugin.cfg

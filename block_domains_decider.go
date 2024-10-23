@@ -2,7 +2,9 @@ package blocker
 
 import (
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -21,9 +23,18 @@ const BlocklistType_ABP BlocklistType = "abp"
 
 // PrepareBlocklist ...
 func PrepareBlocklist(filePath string, blocklistUpdateFrequency string, blocklistType string, logger Logger) (BlockDomainsDecider, []func() error, error) {
-	_, err := os.Stat(filePath)
-	if err != nil {
-		return nil, nil, err
+	isUrl := false
+	if strings.HasPrefix(filePath, "https://") {
+		_, err := http.Head(filePath)
+		if err != nil {
+			return nil, nil, err
+		}
+		isUrl = true
+	} else {
+		_, err := os.Stat(filePath)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	frequency, err := time.ParseDuration(blocklistUpdateFrequency)
@@ -34,9 +45,17 @@ func PrepareBlocklist(filePath string, blocklistUpdateFrequency string, blocklis
 	var decider BlockDomainsDecider
 	switch BlocklistType(blocklistType) {
 	case BlocklistType_Hosts:
-		decider = NewBlockDomainsDeciderHosts(filePath, logger)
+		if isUrl {
+			decider = NewBlockDomainsDeciderHostsUrl(filePath, logger)
+		} else {
+			decider = NewBlockDomainsDeciderHostsFile(filePath, logger)
+		}
 	case BlocklistType_ABP:
-		decider = NewBlockDomainsDeciderABP(filePath, logger)
+		if isUrl {
+			decider = NewBlockDomainsDeciderABPUrl(filePath, logger)
+		} else {
+			decider = NewBlockDomainsDeciderABPFile(filePath, logger)
+		}
 	}
 
 	// Always update the blocklist when the server starts up

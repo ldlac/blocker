@@ -2,36 +2,36 @@ package blocker
 
 import (
 	"bufio"
-	"os"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/miekg/dns"
 )
 
-type BlockDomainsDeciderHosts struct {
-	blocklist     map[string]bool
-	blocklistFile string
-	lastUpdated   time.Time
-	log           Logger
+type BlockDomainsDeciderHostsUrl struct {
+	blocklist    map[string]bool
+	blocklistUrl string
+	lastUpdated  time.Time
+	log          Logger
 }
 
 // Name ...
-func NewBlockDomainsDeciderHosts(filePath string, logger Logger) BlockDomainsDecider {
-	return &BlockDomainsDeciderHosts{
-		blocklistFile: filePath,
-		log:           logger,
-		blocklist:     map[string]bool{},
+func NewBlockDomainsDeciderHostsUrl(url string, logger Logger) BlockDomainsDecider {
+	return &BlockDomainsDeciderHostsUrl{
+		blocklistUrl: url,
+		log:          logger,
+		blocklist:    map[string]bool{},
 	}
 }
 
 // IsDomainBlocked ...
-func (d *BlockDomainsDeciderHosts) IsDomainBlocked(domain string) bool {
+func (d *BlockDomainsDeciderHostsUrl) IsDomainBlocked(domain string) bool {
 	return d.blocklist[domain]
 }
 
 // StartBlocklistUpdater ...
-func (d *BlockDomainsDeciderHosts) StartBlocklistUpdater(ticker *time.Ticker) {
+func (d *BlockDomainsDeciderHostsUrl) StartBlocklistUpdater(ticker *time.Ticker) {
 	go func() {
 		for {
 			tick := <-ticker.C
@@ -48,14 +48,14 @@ func (d *BlockDomainsDeciderHosts) StartBlocklistUpdater(ticker *time.Ticker) {
 }
 
 // UpdateBlocklist ...
-func (d *BlockDomainsDeciderHosts) UpdateBlocklist() error {
+func (d *BlockDomainsDeciderHostsUrl) UpdateBlocklist() error {
 	// Update process
-	blocklistContent, err := os.Open(d.blocklistFile)
+	response, err := http.Get(d.blocklistUrl)
 	if err != nil {
-		d.log.Errorf("could not read blocklist file: %s", d.blocklistFile)
 		return err
 	}
-	defer blocklistContent.Close()
+	defer response.Body.Close()
+	blocklistContent := response.Body
 
 	numBlockedDomainsBefore := len(d.blocklist)
 	lastUpdatedBefore := d.lastUpdated
@@ -83,7 +83,6 @@ func (d *BlockDomainsDeciderHosts) UpdateBlocklist() error {
 }
 
 // IsBlocklistUpdateRequired ...
-func (d *BlockDomainsDeciderHosts) IsBlocklistUpdateRequired() bool {
-	blocklistFileStat, _ := os.Stat(d.blocklistFile)
-	return blocklistFileStat.ModTime().After(d.lastUpdated)
+func (d *BlockDomainsDeciderHostsUrl) IsBlocklistUpdateRequired() bool {
+	return false
 }
